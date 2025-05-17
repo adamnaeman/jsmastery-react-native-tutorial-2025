@@ -1,5 +1,5 @@
 import {View, Text, Image, FlatList, ActivityIndicator} from 'react-native'
-import React from 'react'
+import React ,{useEffect} from 'react'
 import {images} from "@/constants/images";
 import useFetch from "@/services/useFetch";
 import {fetchMovies} from "@/services/api";
@@ -10,9 +10,28 @@ import {useState} from "react";
 const Search = () => {
     const [searchQuery, setSearchQuery] = useState("");
 
-    const { data: movies, loading: moviesLoading, error: moviesError} = useFetch(() => fetchMovies({
-        query: 'iron man'
-    }),false)
+    const {
+        data: movies = [],
+        loading : moviesLoading,
+        error: moviesError,
+        refetch: loadMovies,
+        reset,
+    } = useFetch(() => fetchMovies({ query: searchQuery }), false);
+
+    useEffect(() => {
+        const timeoutId= setTimeout(async () => {
+            if(searchQuery.trim()){
+                await loadMovies();
+            } else {
+                reset();
+            }
+        },500);
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        console.log("Loading:", moviesLoading);
+    }, [moviesLoading]);
 
 
     return (
@@ -32,6 +51,7 @@ const Search = () => {
                 contentContainerStyle={{paddingBottom: 100}}
                 ListHeaderComponent={
                     <>
+
                         <View className={"w-full flex-row justify-center mt-20 items-center"}>
                             <Image source={icons.logo} resizeMode={"cover"} />
                         </View>
@@ -54,13 +74,23 @@ const Search = () => {
                             </Text>
                         )}
 
-                        {/*{!moviesLoading && !moviesError && searchQuery.trim() && movies?.length > 0 && (*/}
-                        {/*    <Text className={"text-xl text-white font-bold"}>*/}
-                        {/*        Search Results for {' '}*/}
-                        {/*        <Text className={"text-accent"}>{searchQuery}</Text>*/}
-                        {/*    </Text>*/}
-                        {/*)}*/}
+                        {!moviesLoading && !moviesError && searchQuery.trim() && movies?.length > 0 && (
+                            <Text className={"text-xl text-white font-bold"}>
+                                Search Results for {' '}
+                                <Text className={"text-accent"}>{searchQuery}</Text>
+                            </Text>
+                        )}
                     </>
+                }
+                ListEmptyComponent={
+                    !moviesLoading && !moviesError ? (
+                        <View className={"mt-10 px-5"}>
+                            <Text className={"text-center text-gray-500"}>
+                                {searchQuery.trim() ?  'No movies found' : 'Search for a movie' }
+                            </Text>
+
+                        </View>
+                        ): null
                 }
             />
         </View>
