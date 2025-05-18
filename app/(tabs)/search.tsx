@@ -7,6 +7,8 @@ import MovieCard from "@/components/MovieCard";
 import {icons} from "@/constants/icons";
 import SearchBar from "@/components/SearchBar";
 import {useState} from "react";
+import {updateSearchCount} from "@/services/appwrite";
+
 const Search = () => {
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -19,7 +21,10 @@ const Search = () => {
     } = useFetch(() => fetchMovies({ query: searchQuery }), false);
 
     useEffect(() => {
+
+
         const timeoutId= setTimeout(async () => {
+            console.log("Searching for:", searchQuery);
             if(searchQuery.trim()){
                 await loadMovies();
             } else {
@@ -28,6 +33,12 @@ const Search = () => {
         },500);
         return () => clearTimeout(timeoutId);
     }, [searchQuery]);
+
+    useEffect(() => {
+        if(movies?.length > 0 && movies?.[0]) {
+            updateSearchCount(searchQuery, movies[0]);
+        }
+    }, [movies]);
 
     useEffect(() => {
         console.log("Loading:", moviesLoading);
@@ -40,7 +51,7 @@ const Search = () => {
             <FlatList
                 className={"px-5"}
                 data={movies}
-                renderItem={({item}) => (<MovieCard {...item}/>)}
+                renderItem={({item}) => <MovieCard {...item}/>}
                 keyExtractor={(item) => item.id.toString()}
                 numColumns={3}
                 columnWrapperStyle={{
@@ -51,7 +62,6 @@ const Search = () => {
                 contentContainerStyle={{paddingBottom: 100}}
                 ListHeaderComponent={
                     <>
-
                         <View className={"w-full flex-row justify-center mt-20 items-center"}>
                             <Image source={icons.logo} resizeMode={"cover"} />
                         </View>
